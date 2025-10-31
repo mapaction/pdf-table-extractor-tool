@@ -34,7 +34,15 @@ from src.data_extraction.extract_latest_id import get_latest_id
 
 # File selection
 # if section == "File selection":
-st.title("Select the range of files to be processed")
+
+st.title("ERM table extraction tool")
+
+st.markdown(
+    """This tool allows users to extract data from ERM reports. These reports can be uploaded manually or obtained directly from DRC EHTools page (https://ehtools.org/document-register). In the second case, users can indicate document IDs based on EHT."
+    """
+)
+
+st.header("Select the range of files to be processed")
 
 # ROOT      = Path(__file__).resolve().parent
 ROOT      = Path(__file__).resolve().parent
@@ -131,7 +139,7 @@ with right:
 ########
 ### # Table extraction and export
 # elif section == "Extract and export tables":
-st.title("Extract tables and export them into an excel file")
+st.header("Extract tables and export them into an excel file")
 st.markdown(
     """
     Please click, if you wish to extract tables and export them into an excel file.
