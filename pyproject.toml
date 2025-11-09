@@ -17,6 +17,7 @@ bs4 = "^0.0.2"
 requests = "^2.32.4"
 selenium = "^4.35.0"
 streamlit = "^1.49.1"
+chromedriver-autoinstaller = "^0.6.4"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.8.0"
