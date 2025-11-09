@@ -27,14 +27,21 @@ st.markdoom the given URL using Selenium in headless mode.
     chrome_options.add_argument("--no-sandbox")     # Often needed in Linux environments
     chrome_options.add_argument("--disable-dev-shm-usage")  # Helps with limited resource issues
 
-    # Ensure chromedriver runs silently (Windows-specific)
-    service = Service()
+    # Point to Chromium binary (on Streamlit Cloud)
+    chromium_path = "/usr/bin/chromium"
+    if os.path.exists(chromium_path):
+        chrome_options.binary_location = chromium_path
+
+    # Point to chromedriver
+    service = Service("/usr/bin/chromedriver")
+    # # Ensure chromedriver runs silently (Windows-specific)
+    # service = Service()
     try:
         service.creationflags = 0x08000000  # CREATE_NO_WINDOW (Windows only)
     except AttributeError:
         pass  # On Linux/macOS, this flag isn't available
   
-    driver = webdriver.Chrome(options=chrome_options) 
+    driver = webdriver.Chrome(service=service, options=chrome_options) 
     driver.get(url)
 
     wait = WebDriverWait(driver, 5)
