@@ -7,6 +7,7 @@ import requests
 import logging, re, unicodedata, warnings
 from datetime import datetime
 import camelot, pdfplumber
+import tempfile, os
 import pandas as pd
 from src.data_scraping.data_scraping import download_pdf
 from src.data_extraction.extract_pdfs import (
@@ -122,11 +123,7 @@ with left:
 ### FILE UPLOAD OPTION
 with right:
     st.header("Upload a pdf file")
-    uploaded_file = st.file_uploader("Browse for file", type="pdf")
-    if uploaded_file:
-        #TODO - ADD file name here
-        st.write(f"File ADDFILENAMEHERE successfully uploaded!")
-    #     st.write(f"{type(uploaded_file)}")
+    uploaded_files = st.file_uploader("Browse for file", type="pdf", accept_multiple_files=True)
 
 
 
@@ -184,31 +181,44 @@ if st.button("Start table extraction"):
     with open(LOG_FILE, "a", encoding="utf-8") as fh:
         fh.writelines(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
 
-    if uploaded_file:
-        pdf_range = list(uploaded_file)
+    if uploaded_files:
+        pdf_range = uploaded_files
     else:
-        pdf_range = list(range(st.session_state.start_id, st.session_state.end_id + 1))
+        pdf_range = [f"{i}.pdf" for i in range(st.session_state.start_id, st.session_state.end_id + 1)]
     for id in pdf_range:
-    # for id in range(st.session_state.start_id, st.session_state.end_id + 1):
-        if type(id) == "streamlit.runtime.uploaded_file_manager.UploadedFile":
-            st.write("Uploaded file ")
-        if type(id) != "streamlit.runtime.uploaded_file_manager.UploadedFile":
-            file_name = f"{id}.pdf"
-        file_name = f"{id}.pdf"
-        pdf = RAW_DIR / file_name
+        if uploaded_files:
+            st.write("Uploaded file(s)")
+            pdf = id
+            pdf_name = id.name
+        if not uploaded_files:
+            st.write("Downloaded files")
+            file_name = id
+            pdf = RAW_DIR / file_name
+            pdf_name = file_name
         # TODO - add spinner???
         with st.status("Checking pdf file...", state="running", expanded=True) as status:
-            st.write(f"Pdf file {pdf.name}")
+            st.write(f"File: {pdf_name}")
             found = False
             with pdfplumber.open(pdf) as doc:
                 pgs = {i + 1 for i, p in enumerate(doc.pages) if TITLE_RX.search(p.extract_text() or "") or HEAD_RX.search(p.extract_text() or "")}
                 if not pgs:
                     pgs = range(1, len(doc.pages) + 1)
-            for p in pgs:                
-                # st.write(f"Searching for the table ...")
+            # save as temporary file so that camelot.read_pdf can work with it
+            ## camelot does not work with ByteIO-type objects
+            ## streamlit.file_uploader returns ByteIO-type objects
+            if uploaded_files:
+                tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+                tmp.write(pdf.read())
+                tmp.flush()
+                tmp.close()
+                pdf_path = tmp.name
+            else:
+                pdf_path = pdf.name
+            for p in pgs:
                 for ps in PARAMS:
                     try:
-                        tables = camelot.read_pdf(str(pdf), pages=str(p), **ps) # type: ignore
+                        pdf_path = pdf
+                        tables = camelot.read_pdf(pdf_path, pages=str(p), **ps)
                     except Exception:
                         continue
                     for tbl in tables:
@@ -219,9 +229,13 @@ if st.button("Start table extraction"):
                         if list(df.columns) != EXPECTED:
                             continue
                         filled = fill_blueprint(df)
-                        out = MID_DIR / f"{pdf.stem}_severity_table.xlsx"
+                        if uploaded_files:
+                            out_name = os.path.splitext(os.path.basename(id.name))[0] + "_severity_table.xlsx"
+                        else:
+                            out_name = os.path.splitext(os.path.basename(id))[0] + "_severity_table.xlsx"
+                        out = MID_DIR / out_name
+                        # out = MID_DIR / f"{pdf.stem}_severity_table.xlsx"
                         filled.to_excel(out, index=False)
-                        # print(f"table extracted ({ps['flavor']}): {out.name}")
                         st.write(f"Table extracted as: {out.name}")
                         with open(LOG_FILE, "a", encoding="utf-8") as fh:
                             # TODO - correct output message, so that pdf.name and out.name appear
@@ -247,19 +261,6 @@ if st.button("Start table extraction"):
 
     print("\nDone.")
 
-# # title
-# st.markdown("# Home")
-
-# # First section
-# st.markdown("## Introduction")
-# st.markdown(
-#     """
-#     This web app allows you to download ERM reports from ehtools.org and extract indicator tables.
-# """
-# )
-
-# # Second section
-# st.markdown("## How to use the tool")
 
 
 
