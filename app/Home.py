@@ -63,8 +63,8 @@ BLUE_CSV  = Path("blueprint.csv")
 # os.makedirs(LOG_DIR, exist_ok=True)
 MID_DIR.mkdir(exist_ok=True)
 LOG_DIR.mkdir(exist_ok=True)
-# LOG_FILE = LOG_DIR / "missing_tables.txt"
-LOG_FILE = LOG_DIR + "/extraction.log"
+LOG_FILE = LOG_DIR / "extraction.log"
+# LOG_FILE = LOG_DIR + "/extraction.log"
 
 BASE_URL   = "https://ehtools.org"
 PDF_URL   = BASE_URL + ("/document-register")
