@@ -8,7 +8,8 @@ import logging, re, unicodedata, warnings
 from datetime import datetime
 import camelot, pdfplumber
 import tempfile, os
-import pandas as pd
+# import pandas as pd
+import shutil
 from src.data_scraping.data_scraping import download_pdf
 from src.data_extraction.extract_pdfs import (
     load_blueprint,
@@ -46,17 +47,24 @@ st.markdown(
 st.header("Select the range of files to be processed")
 
 # ROOT      = Path(__file__).resolve().parent
-ROOT      = Path(__file__).resolve().parent
-RAW_DIR   = ROOT / "ehtools_data_raw"
-MID_DIR   = ROOT / "data_mid"
-LOG_DIR   = ROOT / "logs"
-BLUE_XLSX = ROOT / "blueprint.xlsx"
-BLUE_CSV  = ROOT / "blueprint.csv"
+# RAW_DIR   = ROOT / "ehtools_data_raw"
+# MID_DIR   = ROOT / "data_mid"
+# LOG_DIR   = ROOT / "logs"
+# BLUE_XLSX = ROOT / "blueprint.xlsx"
+# BLUE_CSV  = ROOT / "blueprint.csv"
+DWL_DIR   = Path("ehtools_download")
+MID_DIR   = Path("data_mid")
+LOG_DIR   = Path("logs")
+BLUE_XLSX = Path("blueprint.xlsx")
+BLUE_CSV  = Path("blueprint.csv")
 
+# os.makedirs(DWL_DIR, exist_ok=True)
+# os.makedirs(MID_DIR, exist_ok=True)
+# os.makedirs(LOG_DIR, exist_ok=True)
 MID_DIR.mkdir(exist_ok=True)
 LOG_DIR.mkdir(exist_ok=True)
 # LOG_FILE = LOG_DIR / "missing_tables.txt"
-LOG_FILE = LOG_DIR / "extraction.log"
+LOG_FILE = LOG_DIR + "/extraction.log"
 
 BASE_URL   = "https://ehtools.org"
 PDF_URL   = BASE_URL + ("/document-register")
@@ -64,7 +72,7 @@ PDF_URL   = BASE_URL + ("/document-register")
 left, right = st.columns(2)
 
 with left:
-    st.header("Choose ID range to download")
+    st.subheader("Choose ID range to download")
     st.markdown(
         """
         Please enter the IDs of the reports that you would like to download for 
@@ -101,8 +109,9 @@ with left:
     # START_ID   = 1265
     # END_ID     = 1269          # inclusive
     # END_ID     = 1399          # inclusive
-    PDF_FOLDER = Path("ehtools_data_raw")
-    PDF_FOLDER.mkdir(exist_ok=True)
+    # PDF_FOLDER = Path("ehtools_data_raw")
+    # PDF_FOLDER.mkdir(exist_ok=True)
+    PDF_FOLDER = DWL_DIR
 
     HTTP_TIMEOUT   = 60        # seconds
     POLITENESS_SEC = 0.5       # delay between requests
@@ -122,7 +131,7 @@ with left:
 
 ### FILE UPLOAD OPTION
 with right:
-    st.header("Upload a pdf file")
+    st.subheader("Upload a pdf file")
     uploaded_files = st.file_uploader("Browse for file", type="pdf", accept_multiple_files=True)
 
 
@@ -183,17 +192,17 @@ if st.button("Start table extraction"):
 
     if uploaded_files:
         pdf_range = uploaded_files
+        st.write("Uploaded file(s)")
     else:
         pdf_range = [f"{i}.pdf" for i in range(st.session_state.start_id, st.session_state.end_id + 1)]
+        st.write("Downloaded files")
     for id in pdf_range:
         if uploaded_files:
-            st.write("Uploaded file(s)")
             pdf = id
             pdf_name = id.name
         if not uploaded_files:
-            st.write("Downloaded files")
             file_name = id
-            pdf = RAW_DIR / file_name
+            pdf = DWL_DIR / file_name
             pdf_name = file_name
         # TODO - add spinner???
         with st.status("Checking pdf file...", state="running", expanded=True) as status:
@@ -258,9 +267,19 @@ if st.button("Start table extraction"):
         with open(LOG_FILE, "a", encoding="utf-8") as fh:
             fh.writelines(f"{m}\n" for m in missing)
         print(f"\nLogged {len(missing)} missing reports: {LOG_FILE}")
+    
+    with st.status("Zipping extracted tables ...", state="running", expanded=True) as status:
+        zip_path = Path("table_csvs.zip")
+        shutil.make_archive(zip_path.stem, 'zip', MID_DIR)
 
-    print("\nDone.")
+    # print("\nDone.")
 
+    st.download_button(
+        label = "Download csv files with extracted table",
+        data = zip_path.read_bytes(),
+        file_name = zip_path.name,
+        mime = "application/zip"
+    )
 
 
 
