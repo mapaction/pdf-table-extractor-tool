@@ -46,17 +46,17 @@ st.markdown(
 
 st.header("Select the range of files to be processed")
 
-# ROOT      = Path(__file__).resolve().parent
+ROOT      = Path(__file__).resolve().parent
 # RAW_DIR   = ROOT / "ehtools_data_raw"
 # MID_DIR   = ROOT / "data_mid"
 # LOG_DIR   = ROOT / "logs"
-# BLUE_XLSX = ROOT / "blueprint.xlsx"
-# BLUE_CSV  = ROOT / "blueprint.csv"
+BLUE_XLSX = ROOT / "blueprint.xlsx"
+BLUE_CSV  = ROOT / "blueprint.csv"
 DWL_DIR   = Path("ehtools_download")
 MID_DIR   = Path("data_mid")
 LOG_DIR   = Path("logs")
-BLUE_XLSX = Path("blueprint.xlsx")
-BLUE_CSV  = Path("blueprint.csv")
+# BLUE_XLSX = Path("blueprint.xlsx")
+# BLUE_CSV  = Path("blueprint.csv")
 
 # os.makedirs(DWL_DIR, exist_ok=True)
 # os.makedirs(MID_DIR, exist_ok=True)
