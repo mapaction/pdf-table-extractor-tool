@@ -157,7 +157,7 @@ with left:
 ### FILE UPLOAD OPTION
 with right:
     st.subheader("Upload a pdf file")
-    uploaded_files = st.file_uploader("Browse for file", type="pdf", accept_multiple_files=True, key=st.session_state.uploader_key)
+    st.file_uploader("Browse for file", type="pdf", accept_multiple_files=True, key=st.session_state.uploader_key)
 
 
 
