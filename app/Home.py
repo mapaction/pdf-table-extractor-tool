@@ -70,6 +70,13 @@ LOG_FILE = LOG_DIR / "extraction.log"
 BASE_URL   = "https://ehtools.org"
 PDF_URL   = BASE_URL + ("/document-register")
 
+st.session_state.setdefault("uploader_key", "uploader_1")
+
+def reset_uploaded_files():
+    # st.session_state.pop("uploaded_files", None)
+    st.session_state.pop(st.session_state.uploader_key, None)
+    st.session_state.uploader_key = f"uploader_{time.time()}"   # unique key forces reset
+
 left, right = st.columns(2)
 
 with left:
@@ -100,8 +107,25 @@ with left:
     if "end_id" not in st.session_state:
         st.session_state.end_id = 1
 
-    st.session_state.start_id = st.number_input("Start ID", min_value=1, max_value=max_id, value=st.session_state.start_id, step=1, width=150)
-    st.session_state.end_id = st.number_input("End ID", min_value=st.session_state.start_id, max_value=max_id, value=max(st.session_state.start_id, st.session_state.end_id), step=1, width=150)
+    st.number_input(
+        "Start ID",
+        min_value=1,
+        max_value=max_id,
+        step=1,
+        width=150, 
+        key="start_id",
+        on_change=reset_uploaded_files
+    )
+    st.number_input(
+        "End ID",
+        min_value=st.session_state.start_id,
+        max_value=max_id,
+        value=max(st.session_state.start_id, st.session_state.end_id),
+        step=1,
+        width=150, 
+        key="end_id",
+        on_change=reset_uploaded_files
+    )
 
     # Extra safeguard
     if st.session_state.end_id < st.session_state.start_id:
@@ -121,7 +145,7 @@ with left:
     SESSION = requests.Session()
     SESSION.headers.update({"User-Agent": USER_AGENT})
 
-    if st.button("Start file download"):
+    if st.button("Start file download", on_click=reset_uploaded_files):
         # file = st.file_uploader("Choose CSV", type="csv")
         for doc_id in range(st.session_state.start_id, st.session_state.end_id + 1):
             try:
@@ -133,15 +157,17 @@ with left:
 ### FILE UPLOAD OPTION
 with right:
     st.subheader("Upload a pdf file")
-    uploaded_files = st.file_uploader("Browse for file", type="pdf", accept_multiple_files=True)
+    uploaded_files = st.file_uploader("Browse for file", type="pdf", accept_multiple_files=True, key=st.session_state.uploader_key)
 
 
 
 
 
+# --- detect uploads ---
+def get_uploaded_files():
+    return st.session_state.get(st.session_state.uploader_key)
 
-
-
+uploaded_files = get_uploaded_files()
 
 ########
 ### # Table extraction and export
