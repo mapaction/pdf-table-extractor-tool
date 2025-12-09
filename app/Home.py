@@ -106,6 +106,11 @@ with left:
         st.session_state.start_id = 1
     if "end_id" not in st.session_state:
         st.session_state.end_id = 1
+    # Ensure end_id respects start_id before rendering widgets
+    st.session_state.end_id = max(
+        st.session_state.start_id,
+        st.session_state.end_id,
+    ) 
 
     st.number_input(
         "Start ID",
